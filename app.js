@@ -383,6 +383,13 @@
       items = Array.isArray(d.items) ? d.items : [];
       items.sort(function (a, b) { return ts(b) - ts(a); });
       updated = typeof d.updated === 'number' ? d.updated : 0;
+      var now = Date.now() / 1000, srcs = {};
+      items.forEach(function (i) { if (i.cat !== 'case' && i.source) srcs[i.source] = 1; });
+      $('stNew').textContent = items.filter(function (i) { return i.cat !== 'case' && now - i.first_seen < 86400; }).length;
+      $('stKey').textContent = items.filter(function (i) { return i.ca === 3 && now - ts(i) < 7 * 86400; }).length;
+      $('stSrc').textContent = Array.isArray(d.health) && d.health.length ? d.health.length : Object.keys(srcs).length;
+      $('stChk').textContent = updated ? ago(updated) : '–';
+      $('stats').hidden = false;
       apply();
     })
     .catch(function () {
