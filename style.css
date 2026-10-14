@@ -244,16 +244,30 @@ dialog::backdrop { background: rgba(0,0,0,.55); backdrop-filter: blur(3px); }
 
 /* ---- Source status page ---- */
 a.brand { text-decoration: none; }
-.health { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 8px; }
-.hrow { padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); border-left: 4px solid var(--tax); }
+.health { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; margin-top: 4px; }
+.health .empty { grid-column: 1 / -1; }
+.health .sk { height: 170px; margin: 0; }
+.hrow {
+  --c: var(--accent); display: flex; flex-direction: column; padding: 16px 18px; border-radius: 14px;
+  border: 1px solid var(--line); background: var(--card); border-left: 4px solid var(--tax); transition: border-color .2s, background .2s;
+}
+.hrow:hover { background: var(--card-2); }
 .hrow.warn { border-left-color: var(--gold); }
 .hrow.bad { border-left-color: var(--bank); }
-.htop { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--white); }
+.htop { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; color: var(--white); }
+.hname { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.hname b { line-height: 1.3; }
+.hcat { align-self: flex-start; font-size: 11px; font-weight: 700; letter-spacing: .05em; color: var(--c); }
+.hlink { margin-top: auto; padding-top: 12px; font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.hlink:hover { text-decoration: underline; }
+.hfilter { margin: 4px 0 14px; }
+.ok-t { color: var(--tax); } .warn-t { color: var(--gold); } .bad-t { color: var(--bank); }
+.top .btn { font-size: 13px; }
 .hbadge { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--tax) 18%, transparent); color: var(--tax); }
 .hbadge.warn { background: color-mix(in srgb, var(--gold) 18%, transparent); color: var(--gold); }
 .hbadge.bad { background: color-mix(in srgb, var(--bank) 18%, transparent); color: var(--bank); }
 .hnote { margin-top: 6px; font-size: 13px; color: var(--text); }
-.hgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin-top: 10px; }
+.hgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .hgrid dt { font-size: 11.5px; color: var(--dim); }
 .hgrid dd { font-size: 14px; color: var(--white); font-weight: 600; }
 

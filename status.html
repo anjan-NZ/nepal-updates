@@ -16,19 +16,32 @@
 <header class="top">
   <div class="wrap bar">
     <a class="brand" href="./">Nepal Updates</a>
-    <a class="statuslink" href="./">← Back to updates</a>
+    <a class="btn" href="./">← Back to updates</a>
   </div>
 </header>
 
 <main class="wrap">
   <section class="hero">
-    <p class="label">Source status</p>
-    <h1>Is every source working?</h1>
-    <p class="lede">Each official site is checked every 8 hours. Green means its notice list loaded on the last check. Red means it came back empty twice in a row, which usually means the site moved or changed its layout. A source with no new notices for weeks is usually just quiet.</p>
-    <p class="meta" id="sum" aria-live="polite"></p>
+    <div class="hero-text">
+      <p class="label">Source status</p>
+      <h1>Is every source working?</h1>
+      <p class="lede">Every official site is checked every 8 hours. <b class="ok-t">Working</b> means its notice list loaded on the last check. <b class="warn-t">Check</b> means it came back empty once. <b class="bad-t">Broken</b> means it came back empty twice in a row, which usually means the site moved or changed its layout. A source with no new notices for weeks is usually just quiet.</p>
+      <p class="meta" id="sum" aria-live="polite"></p>
+    </div>
+    <div class="stats" id="stats" hidden>
+      <span class="stat"><b id="stOk">–</b><small>Working</small></span>
+      <span class="stat"><b id="stWarn">–</b><small>Need a look</small></span>
+      <span class="stat"><b id="stBad">–</b><small>Broken</small></span>
+      <span class="stat"><b id="stChk">–</b><small>Last update</small></span>
+    </div>
   </section>
-  <section class="health" id="health" aria-live="polite"><div class="sk"></div></section>
-  <footer class="foot"><p>Made for educational purposes only. Not owned, run or endorsed by any of the offices listed.</p></footer>
+
+  <div class="seg hfilter" id="hfilter" role="group" aria-label="Show" hidden>
+    <button type="button" data-f="all" class="on" aria-pressed="true">All sources</button><button type="button" data-f="bad" aria-pressed="false">Needs attention</button>
+  </div>
+  <section class="health" id="health" aria-live="polite"><div class="sk"></div><div class="sk"></div><div class="sk"></div></section>
+
+  <footer class="foot"><p>Made for educational purposes only. This page is not owned, run or endorsed by any of the offices listed; it only checks their public notice pages.</p></footer>
 </main>
 <script src="status.js" defer></script>
 </body>
