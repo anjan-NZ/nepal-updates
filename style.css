@@ -290,7 +290,7 @@ a.brand { text-decoration: none; }
   .tabs { flex-direction: column; overflow: visible; gap: 4px; padding-top: 14px; }
   .tab { display: flex; justify-content: space-between; text-align: left; border-radius: 10px; }
   .chips { flex-wrap: wrap; overflow: visible; padding-top: 12px; }
-  .feed { max-width: 860px; }
+  .feed { min-width: 0; }  /* fills its column: right edge lines up with the stats box and header */
   .day:first-of-type { margin-top: 10px; }
   .card { padding: 20px 24px 16px 26px; }
   .title { font-size: 18.5px; }
