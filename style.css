@@ -309,3 +309,25 @@ a.brand { text-decoration: none; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   html { scroll-behavior: auto; }
 }
+
+/* installed-app / phone polish */
+.top { padding-top: env(safe-area-inset-top); }
+body { padding-bottom: env(safe-area-inset-bottom); overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+.aibtn[hidden] { display: none; }
+@media (max-width: 899px) {
+  .controls { position: static; background: none; padding: 4px 0 6px; }
+  .lede, .sum, .why, .orig, .ans, .foot p { text-align: left; hyphens: manual; }
+  .lede { font-size: 15px; line-height: 1.6; }
+  .stats { grid-template-columns: repeat(4, 1fr); }
+  .stat { padding: 10px 8px; }
+  .stat b { font-size: 19px; }
+  .stat small { font-size: 10.5px; }
+}
+@media (max-width: 560px) {
+  .bar { gap: 8px; }
+  .bar-r { gap: 6px; }
+  .brand { font-size: 15px; }
+  .hero { padding: 24px 0 8px; }
+  .aibtn { padding: 8px 10px; }
+  button, .seg button, .tabs button { min-height: 38px; }
+}

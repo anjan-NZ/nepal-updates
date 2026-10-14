@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com https://openrouter.ai; base-uri 'none'; form-action 'none'; object-src 'none'">
 <title>Nepal Tax &amp; Law Updates</title>
 <meta name="description" content="Latest tax, law, company, banking and audit notices from Nepal's official sources, with a short plain-English summary of each.">
 <meta name="theme-color" content="#07040f">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
 </head>
@@ -18,6 +20,7 @@
   <div class="wrap bar">
     <span class="brand">Nepal Updates</span>
     <div class="bar-r">
+    <button class="aibtn" id="installBtn" type="button" hidden>Install</button>
     <button class="aibtn" id="aiBtn" type="button" aria-haspopup="dialog">Ask AI<span id="aiDot" class="dot" hidden></span></button>
     <div class="seg" id="theme" role="group" aria-label="Theme">
       <button type="button" data-t="auto" title="Follow device">Auto</button><button type="button" data-t="light" title="Light">Light</button><button type="button" data-t="dark" title="Dark">Dark</button>
@@ -109,5 +112,6 @@
 
 <noscript><p class="wrap noscript">This page needs JavaScript to show the update list.</p></noscript>
 <script src="app.js" defer></script>
+<script src="pwa.js" defer></script>
 </body>
 </html>
