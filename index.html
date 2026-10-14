@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com https://openrouter.ai; base-uri 'none'; form-action 'none'; object-src 'none'">
 <title>Nepal Tax &amp; Law Updates</title>
 <meta name="description" content="Latest tax, law, company, banking and audit notices from Nepal's official sources, with a short plain-English summary of each.">
 <meta name="theme-color" content="#07040f">
@@ -17,11 +17,41 @@
 <header class="top">
   <div class="wrap bar">
     <span class="brand">Nepal Updates</span>
+    <div class="bar-r">
+    <button class="aibtn" id="aiBtn" type="button" aria-haspopup="dialog">Ask AI<span id="aiDot" class="dot" hidden></span></button>
     <div class="seg" id="theme" role="group" aria-label="Theme">
       <button type="button" data-t="auto" title="Follow device">Auto</button><button type="button" data-t="light" title="Light">Light</button><button type="button" data-t="dark" title="Dark">Dark</button>
     </div>
+    </div>
   </div>
 </header>
+
+<dialog id="aiDlg" aria-labelledby="aiTitle">
+  <form method="dialog" class="dlg" id="aiForm">
+    <h2 id="aiTitle">Ask AI about these posts</h2>
+    <p class="dlg-note">Add your own AI key to ask questions about any post. The key stays in this browser and is sent only to the provider you pick. This site has no server and never sees it.</p>
+    <label>Provider
+      <select id="aiProv">
+        <option value="gemini">Google Gemini (free key)</option>
+        <option value="groq">Groq</option>
+        <option value="openrouter">OpenRouter</option>
+      </select>
+    </label>
+    <label>API key
+      <input id="aiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your key">
+    </label>
+    <label>Model <small>(optional)</small>
+      <input id="aiModel" type="text" autocomplete="off" spellcheck="false">
+    </label>
+    <label class="chk"><input id="aiRemember" type="checkbox"> Remember the key on this device</label>
+    <p class="dlg-note" id="aiHelp"></p>
+    <div class="dlg-btns">
+      <button type="button" class="btn" id="aiClear">Remove key</button>
+      <button type="button" class="btn" id="aiCancel">Close</button>
+      <button type="submit" class="btn primary" id="aiSave">Save</button>
+    </div>
+  </form>
+</dialog>
 
 <main class="wrap">
   <section class="hero">
@@ -31,7 +61,8 @@
     <p class="meta" id="meta" aria-live="polite"></p>
   </section>
 
-  <section class="controls" aria-label="Filters">
+  <div class="layout">
+  <aside class="controls" aria-label="Filters">
     <div class="row">
       <label class="search"><span class="sr">Search updates</span>
         <input id="q" type="search" placeholder="Search VAT, TDS, Companies Act, IRD…" autocomplete="off" spellcheck="false" maxlength="80">
@@ -43,10 +74,24 @@
     </div>
     <div class="tabs" id="tabs" role="tablist" aria-label="Category"></div>
     <div class="chips" id="tags" aria-label="Tags"></div>
-  </section>
+    <a class="statuslink" href="status.html">Source status: which sites are being checked</a>
+  </aside>
+
+  <div class="feed">
+
+  <details class="askall" id="askAll">
+    <summary>Ask AI about the posts listed below</summary>
+    <form class="askrow" id="askAllForm">
+      <input id="askAllQ" type="text" maxlength="400" placeholder="e.g. Any VAT or TDS changes in these? / यीमध्ये कुन सूचना सहकारीसँग सम्बन्धित छन्?" autocomplete="off">
+      <button type="submit" class="btn primary">Ask</button>
+    </form>
+    <p class="ans" id="askAllAns" aria-live="polite" hidden></p>
+  </details>
 
   <section id="list" aria-live="polite"><div class="sk"></div><div class="sk"></div><div class="sk"></div></section>
   <div class="morewrap"><button id="more" type="button" hidden>Show more</button></div>
+  </div>
+  </div>
 
   <footer class="foot">
     <p><b>Disclaimer.</b> This page is made for educational purposes only. It is an independent, unofficial page. It is not owned, run or endorsed by any government office, regulator or body named here, and it does not own any of the notices listed. Every notice and document belongs to the office that issued it; this page only links to the official source.</p>

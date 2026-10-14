@@ -141,10 +141,163 @@
     if (href) btns.appendChild(link('btn', href, 'Open source'));
     var pdf = safeUrl(i.pdf);
     if (pdf && pdf !== href) btns.appendChild(link('btn', pdf, 'PDF'));
+    var ask = el('button', 'btn', 'Ask AI');
+    ask.type = 'button';
+    ask.addEventListener('click', function () { askPanel(c, i); });
+    btns.appendChild(ask);
     foot.appendChild(btns);
     c.appendChild(foot);
     return c;
   }
+
+  // ---- Ask AI: the visitor's own key, sent straight from this browser to the provider they picked ----
+  var PROV = {
+    gemini: { model: 'gemini-flash-lite-latest', help: 'Free key: aistudio.google.com/apikey (sign in with Google, "Create API key").' },
+    groq: { model: 'llama-3.3-70b-versatile', help: 'Key from console.groq.com/keys.' },
+    openrouter: { model: 'meta-llama/llama-3.3-70b-instruct:free', help: 'Key from openrouter.ai/keys. Models ending in ":free" cost nothing.' }
+  };
+  var SYS = 'You answer questions about official Nepali notices (tax, law, company, banking, audit) for an accountant. ' +
+    'Use only the notice data given. If the answer is not in it, say so and suggest opening the official source. ' +
+    'Do not invent section numbers, rates or dates. Reply in the language of the question (English or Nepali), ' +
+    'in short plain sentences. End with: "Check the official source before relying on this."';
+
+  function aiCfg() {
+    var raw = null;
+    try { raw = sessionStorage.getItem('ai') || localStorage.getItem('ai'); } catch (e) { /* blocked */ }
+    try { return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+  }
+  function aiSave(cfg, remember) {
+    try {
+      localStorage.removeItem('ai'); sessionStorage.removeItem('ai');
+      if (cfg) (remember ? localStorage : sessionStorage).setItem('ai', JSON.stringify(cfg));
+    } catch (e) { /* not saved: works until reload */ }
+    memCfg = cfg;
+    $('aiDot').hidden = !cfg;
+  }
+  var memCfg = aiCfg();
+
+  function slimItem(i) {
+    return { source: i.source, date: i.pub || '', title: i.title, title_en: i.title_en || '', summary: i.summary || '',
+      why: i.why || '', tags: i.tags || [], url: i.url, pdf: i.pdf || '' };
+  }
+
+  function callAI(question, context) {
+    var cfg = memCfg;
+    if (!cfg || !cfg.k) return Promise.reject(new Error('nokey'));
+    var model = cfg.m || PROV[cfg.p].model;
+    var user = 'Notice data (JSON):\n' + JSON.stringify(context) + '\n\nQuestion: ' + question;
+    var req;
+    if (cfg.p === 'gemini') {
+      req = fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
+        method: 'POST', credentials: 'omit', referrerPolicy: 'no-referrer',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': cfg.k },
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: SYS }] }, contents: [{ role: 'user', parts: [{ text: user }] }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: 700 } })
+      });
+    } else {
+      req = fetch(cfg.p === 'groq' ? 'https://api.groq.com/openai/v1/chat/completions' : 'https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST', credentials: 'omit', referrerPolicy: 'no-referrer',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.k },
+        body: JSON.stringify({ model: model, temperature: 0.2, max_tokens: 700,
+          messages: [{ role: 'system', content: SYS }, { role: 'user', content: user }] })
+      });
+    }
+    return req.then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) {
+          var m = r.status === 401 || r.status === 403 ? 'The key was rejected. Check it in Ask AI settings.'
+            : r.status === 429 ? 'Rate limit reached for this key. Wait a minute and try again.'
+            : r.status === 404 ? 'Model not found. Clear the Model box in Ask AI settings to use the default.'
+            : 'The AI service returned an error (' + r.status + ').';
+          throw new Error(m);
+        }
+        var t = cfg.p === 'gemini'
+          ? (((d.candidates || [])[0] || {}).content || { parts: [] }).parts.map(function (p) { return p.text || ''; }).join('')
+          : (((d.choices || [])[0] || {}).message || {}).content;
+        if (!t) throw new Error('The AI returned an empty answer. Try asking differently.');
+        return String(t).replace(/\*\*(.+?)\*\*/g, '$1').replace(/^#+\s*/gm, '').trim();
+      });
+    });
+  }
+
+  function runAsk(question, context, out, btn) {
+    if (!memCfg) { openDlg(); return; }
+    out.hidden = false;
+    out.className = 'ans wait';
+    out.textContent = 'Thinking…';
+    btn.disabled = true;
+    callAI(question, context).then(function (t) {
+      out.className = 'ans';
+      out.textContent = t;
+    }, function (e) {
+      out.className = 'ans err';
+      out.textContent = e.message === 'nokey' ? 'Add your AI key first (Ask AI, top right).' :
+        (e instanceof TypeError ? 'Could not reach the AI service. Check your connection.' : e.message);
+    }).then(function () { btn.disabled = false; });
+  }
+
+  function askPanel(c, i) {
+    var open = c.querySelector('.askbox');
+    if (open) { open.remove(); return; }
+    if (!memCfg) { openDlg(); return; }
+    var box = el('form', 'askbox');
+    var inp = el('input');
+    inp.type = 'text'; inp.maxLength = 400; inp.autocomplete = 'off';
+    inp.placeholder = 'Ask about this notice, e.g. who must comply and by when?';
+    var b = el('button', 'btn primary', 'Ask');
+    b.type = 'submit';
+    var row = el('div', 'askrow');
+    row.appendChild(inp); row.appendChild(b);
+    var out = el('p', 'ans');
+    out.hidden = true;
+    out.setAttribute('aria-live', 'polite');
+    box.appendChild(row); box.appendChild(out);
+    box.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var qq = inp.value.trim();
+      if (qq) runAsk(qq, slimItem(i), out, b);
+    });
+    c.appendChild(box);
+    inp.focus();
+  }
+
+  var dlg = $('aiDlg');
+  function openDlg() {
+    var cfg = memCfg || { p: 'gemini', k: '', m: '' };
+    $('aiProv').value = PROV[cfg.p] ? cfg.p : 'gemini';
+    $('aiKey').value = cfg.k || '';
+    $('aiModel').value = cfg.m || '';
+    var remembered = false;
+    try { remembered = !!localStorage.getItem('ai'); } catch (e) { /* blocked */ }
+    $('aiRemember').checked = remembered;
+    drawHelp();
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  }
+  function drawHelp() {
+    var p = PROV[$('aiProv').value];
+    $('aiModel').placeholder = 'Default: ' + p.model;
+    $('aiHelp').textContent = p.help;
+  }
+  $('aiProv').addEventListener('change', drawHelp);
+  $('aiBtn').addEventListener('click', openDlg);
+  $('aiCancel').addEventListener('click', function () { dlg.close(); });
+  $('aiClear').addEventListener('click', function () { aiSave(null); $('aiKey').value = ''; dlg.close(); });
+  $('aiForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var k = $('aiKey').value.trim();
+    if (!k) { $('aiKey').focus(); return; }
+    aiSave({ p: $('aiProv').value, k: k.slice(0, 300), m: $('aiModel').value.trim().slice(0, 100) }, $('aiRemember').checked);
+    dlg.close();
+  });
+  $('aiDot').hidden = !memCfg;
+
+  $('askAllForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var qq = $('askAllQ').value.trim();
+    if (!qq) return;
+    var ctx = rows.slice(0, 60).map(slimItem);  // the posts currently listed (filters + search applied)
+    runAsk(qq, ctx, $('askAllAns'), this.querySelector('button'));
+  });
 
   function more() {
     var list = $('list'), end = Math.min(rows.length, shown + PAGE);

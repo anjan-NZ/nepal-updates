@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<title>Source status · Nepal Updates</title>
+<meta name="description" content="Which official Nepali sources are being checked, and when each one last gave a new notice.">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="./">Nepal Updates</a>
+    <a class="statuslink" href="./">← Back to updates</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <p class="label">Source status</p>
+    <h1>Is every source working?</h1>
+    <p class="lede">Each official site is checked every 8 hours. Green means its notice list loaded on the last check. Red means it came back empty twice in a row, which usually means the site moved or changed its layout. A source with no new notices for weeks is usually just quiet.</p>
+    <p class="meta" id="sum" aria-live="polite"></p>
+  </section>
+  <section class="health" id="health" aria-live="polite"><div class="sk"></div></section>
+  <footer class="foot"><p>Made for educational purposes only. Not owned, run or endorsed by any of the offices listed.</p></footer>
+</main>
+<script src="status.js" defer></script>
+</body>
+</html>
