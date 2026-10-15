@@ -21,7 +21,12 @@
     try { var p = new URL(u); return (p.protocol === 'https:' || p.protocol === 'http:') ? p.href : ''; } catch (e) { return ''; }
   }
   function caScore(i) { return typeof i.ca === 'number' ? i.ca : (CA_RE.test(i.title + ' ' + (i.summary || '')) ? 2 : 1); }
-  function isoTs(p) { var m = /^(20\d\d)-(\d\d)-(\d\d)/.exec(p || ''); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 1000 : 0; }
+  // only real (AD) dates: a Bikram Sambat date like 2081-12-19 would otherwise read as the year 2081
+  function isoTs(p) {
+    var m = /^(20\d\d)-(\d\d)-(\d\d)/.exec(p || '');
+    if (!m || +m[1] > new Date().getFullYear() + 1) return 0;
+    return Date.UTC(+m[1], +m[2] - 1, +m[3]) / 1000;
+  }
   function ts(i) { return isoTs(i.pub) || i.first_seen; }
   function ago(t) {
     var s = Date.now() / 1000 - t;
