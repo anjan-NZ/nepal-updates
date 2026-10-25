@@ -331,3 +331,18 @@ body { padding-bottom: env(safe-area-inset-bottom); overscroll-behavior-y: none;
   .aibtn { padding: 8px 10px; }
   button, .seg button, .tabs button { min-height: 38px; }
 }
+
+/* ---- Polish layer: easing, scroll reveal, press feedback, skip link ---- */
+:root { --ease: cubic-bezier(0.32, 0.72, 0, 1); }
+h1, .title { text-wrap: balance; }
+.lede, .sum, .why, .orig { text-wrap: pretty; }
+.card, .tab, .chip, .btn, .aibtn, #more, .seg button, .stats .stat { transition-timing-function: var(--ease); }
+.card { transition-duration: .35s; }
+.card:hover { transform: translateY(-2px); }
+.tab:active, .chip:active, .btn:active, .aibtn:active, #more:active, .seg button:active, .t:active { transform: scale(.98); }
+.skip { position: absolute; left: 16px; top: -48px; z-index: 10; padding: 8px 14px; border-radius: 10px; background: var(--accent-2); color: #fff; font-weight: 650; text-decoration: none; transition: top .2s var(--ease); }
+.skip:focus { top: 8px; }
+@supports (animation-timeline: view()) {
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  .card { animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 40%; }
+}
