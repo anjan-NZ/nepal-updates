@@ -1,15 +1,17 @@
 (function () {
   'use strict';
 
-  var CATS = [['all', 'All'], ['tax', 'Tax'], ['law', 'Law'], ['company', 'Company'], ['bank', 'Banking'], ['audit', 'Audit'], ['case', 'Case law']];
-  var COL = { tax: 'var(--tax)', law: 'var(--law)', company: 'var(--company)', bank: 'var(--bank)', audit: 'var(--audit)', case: 'var(--case)' };
+  // 'circ' is not a category: it lists items typed "circular" (IRD सूचना, NRB circulars, any परिपत्र) from every category
+  var CATS = [['all', 'All'], ['tax', 'Tax'], ['circ', 'Circulars'], ['law', 'Law'], ['company', 'Company'], ['bank', 'Banking'], ['audit', 'Audit'], ['case', 'Case law']];
+  var COL = { circ: 'var(--gold)', tax: 'var(--tax)', law: 'var(--law)', company: 'var(--company)', bank: 'var(--bank)', audit: 'var(--audit)', case: 'var(--case)' };
   var CA_RE = /vat|tds|tax|rate|finance act|income tax|excise|companies act|company act|nfrs|nsa|audit|udin|directive|circular|procurement|amendment|ordinance|aml|beneficial|कर|आयकर|मूल्य अभिवृद्धि|आर्थिक ऐन|कम्पनी ऐन|खरिद|संशोधन|अध्यादेश|ऐन|नियमावली|निर्देशन|परिपत्र|निर्देशिका/i;
   var PAGE = 20;
 
-  var items = [], rows = [], cat = 'all', tag = null, circ = false, q = '', shown = 0, caOnly = true, lastDay = '';
+  var items = [], rows = [], cat = 'all', tag = null, q = '', shown = 0, caOnly = true, lastDay = '';
   var lang = 'np', updated = 0;  // Nepali (original) titles by default
   try { if (localStorage.getItem('lang') === 'en') lang = 'en'; } catch (e) { /* storage blocked: default Nepali */ }
-  if (/^#circulars?$/i.test(location.hash)) circ = true;  // direct link: …/nepal-updates/#circulars
+  if (/^#circulars?$/i.test(location.hash)) cat = 'circ';  // direct link: …/nepal-updates/#circulars
+  function inCat(i, c) { return c === 'circ' ? i.type === 'circular' && i.cat !== 'case' : i.cat === c; }
   var $ = function (id) { return document.getElementById(id); };
 
   function el(tag, cls, text) {
@@ -66,7 +68,7 @@
     var t = $('tabs'), p = pool();
     t.textContent = '';
     CATS.forEach(function (c) {
-      var n = p.filter(function (i) { return (!circ || i.type === 'circular') && (c[0] === 'all' ? i.cat !== 'case' : i.cat === c[0]); }).length;
+      var n = p.filter(function (i) { return c[0] === 'all' ? i.cat !== 'case' : inCat(i, c[0]); }).length;
       if (c[0] !== 'all' && c[0] !== 'case' && !n) return;
       var b = el('button', 'tab' + (cat === c[0] ? ' on' : ''), c[1]);
       b.type = 'button';
@@ -77,22 +79,12 @@
       b.addEventListener('click', function () { cat = c[0]; tag = null; apply(); });
       t.appendChild(b);
     });
-    var g = $('tags'), m = {}, nc = 0;
+    var g = $('tags'), m = {};
     g.textContent = '';
     p.forEach(function (i) {
-      if (cat !== 'all' && i.cat !== cat) return;
-      if (i.type === 'circular' && i.cat !== 'case') nc++;
+      if (cat !== 'all' && !inCat(i, cat)) return;
       (i.tags || []).forEach(function (v) { if (v) m[v] = (m[v] || 0) + 1; });
     });
-    // pinned first: circulars (IRD सूचना, NRB circulars, any परिपत्र), combines with the category tab
-    if (nc || circ) {
-      var cb = el('button', 'chip circ' + (circ ? ' on' : ''), 'Circulars · परिपत्र');
-      cb.type = 'button';
-      cb.setAttribute('aria-pressed', circ ? 'true' : 'false');
-      cb.appendChild(el('small', null, String(nc)));
-      cb.addEventListener('click', function () { circ = !circ; apply(); });
-      g.appendChild(cb);
-    }
     Object.keys(m).sort(function (a, b) { return m[b] - m[a]; }).slice(0, 14).forEach(function (v) {
       var b = el('button', 'chip' + (tag === v ? ' on' : ''), v);
       b.type = 'button';
@@ -103,10 +95,9 @@
 
   function ok(i) {
     if (caOnly && caScore(i) < 2) return false;
-    if (cat !== 'all' && i.cat !== cat) return false;
+    if (cat !== 'all' && !inCat(i, cat)) return false;
     if (cat === 'all' && i.cat === 'case' && !q) return false;
     if (tag && (i.tags || []).indexOf(tag) < 0) return false;
-    if (circ && i.type !== 'circular') return false;
     if (!q) return true;
     var h = ((i.title || '') + ' ' + (i.title_en || '') + ' ' + (i.summary || '') + ' ' + (i.tags || []).join(' ') + ' ' + (i.source || '') + ' ' + (i.pub || '') +
       (i.type === 'circular' ? ' circular परिपत्र' : '')).toLowerCase();
