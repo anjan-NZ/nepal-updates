@@ -1,5 +1,5 @@
 // Offline shell: app files cached on install; feed.json network-first (falls back to last copy).
-var V = 'nu-v3';
+var V = 'nu-v4';
 var SHELL = ['./', 'index.html', 'status.html', 'style.css', 'app.js', 'status.js', 'theme.js', 'favicon.svg',
   'icons/icon-192.png', 'icons/icon-512.png'];
 

@@ -6,9 +6,10 @@
   var CA_RE = /vat|tds|tax|rate|finance act|income tax|excise|companies act|company act|nfrs|nsa|audit|udin|directive|circular|procurement|amendment|ordinance|aml|beneficial|कर|आयकर|मूल्य अभिवृद्धि|आर्थिक ऐन|कम्पनी ऐन|खरिद|संशोधन|अध्यादेश|ऐन|नियमावली|निर्देशन|परिपत्र|निर्देशिका/i;
   var PAGE = 20;
 
-  var items = [], rows = [], cat = 'all', tag = null, q = '', shown = 0, caOnly = true, lastDay = '';
+  var items = [], rows = [], cat = 'all', tag = null, circ = false, q = '', shown = 0, caOnly = true, lastDay = '';
   var lang = 'np', updated = 0;  // Nepali (original) titles by default
   try { if (localStorage.getItem('lang') === 'en') lang = 'en'; } catch (e) { /* storage blocked: default Nepali */ }
+  if (/^#circulars?$/i.test(location.hash)) circ = true;  // direct link: …/nepal-updates/#circulars
   var $ = function (id) { return document.getElementById(id); };
 
   function el(tag, cls, text) {
@@ -65,7 +66,7 @@
     var t = $('tabs'), p = pool();
     t.textContent = '';
     CATS.forEach(function (c) {
-      var n = p.filter(function (i) { return c[0] === 'all' ? i.cat !== 'case' : i.cat === c[0]; }).length;
+      var n = p.filter(function (i) { return (!circ || i.type === 'circular') && (c[0] === 'all' ? i.cat !== 'case' : i.cat === c[0]); }).length;
       if (c[0] !== 'all' && c[0] !== 'case' && !n) return;
       var b = el('button', 'tab' + (cat === c[0] ? ' on' : ''), c[1]);
       b.type = 'button';
@@ -76,12 +77,22 @@
       b.addEventListener('click', function () { cat = c[0]; tag = null; apply(); });
       t.appendChild(b);
     });
-    var g = $('tags'), m = {};
+    var g = $('tags'), m = {}, nc = 0;
     g.textContent = '';
     p.forEach(function (i) {
       if (cat !== 'all' && i.cat !== cat) return;
+      if (i.type === 'circular' && i.cat !== 'case') nc++;
       (i.tags || []).forEach(function (v) { if (v) m[v] = (m[v] || 0) + 1; });
     });
+    // pinned first: circulars (IRD सूचना, NRB circulars, any परिपत्र), combines with the category tab
+    if (nc || circ) {
+      var cb = el('button', 'chip circ' + (circ ? ' on' : ''), 'Circulars · परिपत्र');
+      cb.type = 'button';
+      cb.setAttribute('aria-pressed', circ ? 'true' : 'false');
+      cb.appendChild(el('small', null, String(nc)));
+      cb.addEventListener('click', function () { circ = !circ; apply(); });
+      g.appendChild(cb);
+    }
     Object.keys(m).sort(function (a, b) { return m[b] - m[a]; }).slice(0, 14).forEach(function (v) {
       var b = el('button', 'chip' + (tag === v ? ' on' : ''), v);
       b.type = 'button';
@@ -95,8 +106,10 @@
     if (cat !== 'all' && i.cat !== cat) return false;
     if (cat === 'all' && i.cat === 'case' && !q) return false;
     if (tag && (i.tags || []).indexOf(tag) < 0) return false;
+    if (circ && i.type !== 'circular') return false;
     if (!q) return true;
-    var h = ((i.title || '') + ' ' + (i.title_en || '') + ' ' + (i.summary || '') + ' ' + (i.tags || []).join(' ') + ' ' + (i.source || '') + ' ' + (i.pub || '')).toLowerCase();
+    var h = ((i.title || '') + ' ' + (i.title_en || '') + ' ' + (i.summary || '') + ' ' + (i.tags || []).join(' ') + ' ' + (i.source || '') + ' ' + (i.pub || '') +
+      (i.type === 'circular' ? ' circular परिपत्र' : '')).toLowerCase();
     return q.toLowerCase().split(/\s+/).every(function (w) { return h.indexOf(w) >= 0; });
   }
 
@@ -109,6 +122,7 @@
       ? [i.kind, i.pub && 'decided ' + i.pub, i.case_no].filter(Boolean).join(' · ')
       : (i.pub ? i.pub + ' · ' : '') + ago(ts(i))));
     if (i.ca === 3) head.appendChild(el('span', 'badge key', 'KEY'));
+    if (i.type === 'circular') head.appendChild(el('span', 'badge circ', 'CIRCULAR'));
     c.appendChild(head);
 
     var href = safeUrl(i.url);

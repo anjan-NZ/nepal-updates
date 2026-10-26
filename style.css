@@ -152,6 +152,9 @@ input[type=search]:focus { border-color: var(--accent); background: var(--card-2
 .badge { padding: 1px 7px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: .08em; }
 .key { background: var(--gold); color: #1a1200; }
 .new { background: var(--accent); color: #04221b; }
+.badge.circ { background: color-mix(in srgb, var(--tax) 22%, transparent); color: var(--tax); border: 1px solid color-mix(in srgb, var(--tax) 45%, transparent); }
+.chip.circ { font-weight: 650; }
+.chip.circ small { opacity: .6; margin-left: 5px; }
 .title { display: block; margin: 6px 0 6px; font-size: 17px; line-height: 1.4; font-weight: 650; color: var(--white); text-decoration: none; }
 .title:hover { color: var(--accent); }
 .sum { font-size: 14.5px; color: var(--text); }
