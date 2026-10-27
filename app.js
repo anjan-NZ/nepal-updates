@@ -2,7 +2,7 @@
   'use strict';
 
   // 'circ' is not a category: it lists items typed "circular" (IRD सूचना, NRB circulars, any परिपत्र) from every category
-  var CATS = [['all', 'All'], ['tax', 'Tax'], ['circ', 'Circulars'], ['law', 'Law'], ['company', 'Company'], ['bank', 'Banking'], ['audit', 'Audit'], ['student', 'Students'], ['case', 'Case law']];
+  var CATS = [['all', 'All'], ['student', 'Students'], ['tax', 'Tax'], ['circ', 'Circulars'], ['law', 'Law'], ['company', 'Company'], ['bank', 'Banking'], ['audit', 'Audit'], ['case', 'Case law']];
   var COL = { circ: 'var(--gold)', tax: 'var(--tax)', law: 'var(--law)', company: 'var(--company)', bank: 'var(--bank)', audit: 'var(--audit)', student: 'var(--student)', case: 'var(--case)' };
   var CA_RE = /vat|tds|tax|rate|finance act|income tax|excise|companies act|company act|nfrs|nsa|audit|udin|directive|circular|procurement|amendment|ordinance|aml|beneficial|कर|आयकर|मूल्य अभिवृद्धि|आर्थिक ऐन|कम्पनी ऐन|खरिद|संशोधन|अध्यादेश|ऐन|नियमावली|निर्देशन|परिपत्र|निर्देशिका/i;
   var PAGE = 20;
@@ -10,6 +10,7 @@
   var items = [], rows = [], cat = 'all', tag = null, q = '', shown = 0, caOnly = true, lastDay = '';
   var lang = 'np', updated = 0;  // Nepali (original) titles by default
   try { if (localStorage.getItem('lang') === 'en') lang = 'en'; } catch (e) { /* storage blocked: default Nepali */ }
+  if (/^#students?$/i.test(location.hash)) cat = 'student';  // direct link: …/nepal-updates/#students
   if (/^#circulars?$/i.test(location.hash)) cat = 'circ';  // direct link: …/nepal-updates/#circulars
   function inCat(i, c) { return c === 'circ' ? i.type === 'circular' && i.cat !== 'case' : i.cat === c; }
   var $ = function (id) { return document.getElementById(id); };
@@ -80,13 +81,17 @@
     CATS.forEach(function (c) {
       var n = p.filter(function (i) { return c[0] === 'all' ? (i.cat !== 'case' && i.cat !== 'student') : inCat(i, c[0]); }).length;
       if (c[0] !== 'all' && c[0] !== 'case' && !n) return;
-      var b = el('button', 'tab' + (cat === c[0] ? ' on' : ''), c[1]);
+      var b = el('button', 'tab' + (c[0] === 'student' ? ' stu' : '') + (cat === c[0] ? ' on' : ''), c[1]);
       b.type = 'button';
       b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', cat === c[0] ? 'true' : 'false');
       if (COL[c[0]]) b.style.setProperty('--c', COL[c[0]]);
       b.appendChild(el('small', null, String(n)));
-      b.addEventListener('click', function () { cat = c[0]; tag = null; apply(); });
+      b.addEventListener('click', function () {
+        cat = c[0]; tag = null;
+        try { history.replaceState(null, '', cat === 'student' ? '#students' : location.pathname + location.search); } catch (e) { /* ignore */ }
+        apply();
+      });
       t.appendChild(b);
     });
     var g = $('tags'), m = {};
@@ -336,7 +341,8 @@
     $('list').textContent = '';
     $('more').hidden = true;
     var m = $('meta');
-    m.textContent = rows.length + ' item' + (rows.length === 1 ? '' : 's') + (updated ? ' · checked ' + ago(updated) : '');
+    m.textContent = (cat === 'student' ? 'Notices from TU and ICAN for students: exams, results, forms, scholarships · ' : '') +
+      rows.length + ' item' + (rows.length === 1 ? '' : 's') + (updated ? ' · checked ' + ago(updated) : '');
     if (!rows.length) {
       var e = el('div', 'empty');
       e.appendChild(el('b', null, q ? 'No matches' : 'Nothing here yet'));

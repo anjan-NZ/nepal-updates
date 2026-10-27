@@ -138,6 +138,8 @@ input[type=search]:focus { border-color: var(--accent); background: var(--card-2
 .chip { padding: 3px 11px; font-size: 12px; }
 .tab:hover, .chip:hover { color: var(--white); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 .tab.on { color: var(--on-accent); background: var(--c, var(--accent)); border-color: transparent; }
+.tab.stu { color: var(--student); border-color: var(--student); background: color-mix(in srgb, var(--student) 14%, var(--card)); font-weight: 700; }
+.tab.stu.on { color: var(--on-accent); background: var(--student); }
 .chip.on { color: var(--white); background: color-mix(in srgb, var(--accent-2) 28%, transparent); border-color: var(--accent-2); }
 
 .day { margin: 26px 0 4px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
