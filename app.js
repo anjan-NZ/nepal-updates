@@ -24,11 +24,21 @@
     try { var p = new URL(u); return (p.protocol === 'https:' || p.protocol === 'http:') ? p.href : ''; } catch (e) { return ''; }
   }
   function caScore(i) { return typeof i.ca === 'number' ? i.ca : (CA_RE.test(i.title + ' ' + (i.summary || '')) ? 2 : 1); }
-  // only real (AD) dates: a Bikram Sambat date like 2081-12-19 would otherwise read as the year 2081
+  // AD dates as-is; Bikram Sambat ones (2082/02/10, २०८२।०२।१०) converted to an AD date good to a day or two
+  var BS_LEN = [31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30];
   function isoTs(p) {
-    var m = /^(20\d\d)-(\d\d)-(\d\d)/.exec(p || '');
-    if (!m || +m[1] > new Date().getFullYear() + 1) return 0;
-    return Date.UTC(+m[1], +m[2] - 1, +m[3]) / 1000;
+    p = String(p || '').replace(/[०-९]/g, function (d) { return '०१२३४५६७८९'.indexOf(d); });
+    var m = /^(\d{4})[-\/.।](\d{1,2})[-\/.।](\d{1,2})/.exec(p);
+    if (!m) return 0;
+    var y = +m[1], mo = +m[2], d = +m[3], t;
+    if (mo < 1 || mo > 12 || d < 1 || d > 32) return 0;
+    if (y >= 2060 && y <= 2110) {
+      var days = d - 1;
+      for (var k = 0; k < mo - 1; k++) days += BS_LEN[k];
+      t = Date.UTC(y - 57, 3, 14 + days) / 1000;
+    } else if (y >= 1990 && y <= new Date().getFullYear() + 1) t = Date.UTC(y, mo - 1, d) / 1000;
+    else return 0;
+    return t > Date.now() / 1000 + 86400 ? 0 : t;
   }
   function ts(i) { return isoTs(i.pub) || i.first_seen; }
   function ago(t) {
