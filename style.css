@@ -17,6 +17,7 @@
   --bank: #ff8fa3;
   --audit: #5ec2ff;
   --case: #b6a3ff;
+  --student: #f2a65a;
   --bar: rgba(7,4,15,.7);
   --surface: #15111f;
   --track: #2a2540;
@@ -45,6 +46,7 @@
   --bank: #c93a5f;
   --audit: #1b72b5;
   --case: #6d4fe0;
+  --student: #b4580f;
   --bar: rgba(245,246,250,.82);
   --surface: #ffffff;
   --track: #c9cdd9;
@@ -58,7 +60,7 @@
   :root:not([data-theme]) {
     --bg: #f5f6fa; --card: #ffffff; --card-2: #f0f2f8; --line: rgba(20,30,70,.13);
     --accent: #0b8f78; --accent-2: #5b3fe0; --gold: #b7791f; --text: #2b3245; --dim: #5d6680; --white: #0e1428;
-    --tax: #0b8f78; --law: #5b3fe0; --company: #a8690f; --bank: #c93a5f; --audit: #1b72b5; --case: #6d4fe0;
+    --tax: #0b8f78; --law: #5b3fe0; --company: #a8690f; --bank: #c93a5f; --audit: #1b72b5; --case: #6d4fe0; --student: #b4580f;
     --bar: rgba(245,246,250,.82); --surface: #ffffff; --track: #c9cdd9; --chip: rgba(20,30,70,.06); --on-accent: #ffffff;
     --glow-1: rgba(91,63,224,.08); --glow-2: rgba(11,143,120,.06);
     color-scheme: light;

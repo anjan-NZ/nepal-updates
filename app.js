@@ -2,8 +2,8 @@
   'use strict';
 
   // 'circ' is not a category: it lists items typed "circular" (IRD सूचना, NRB circulars, any परिपत्र) from every category
-  var CATS = [['all', 'All'], ['tax', 'Tax'], ['circ', 'Circulars'], ['law', 'Law'], ['company', 'Company'], ['bank', 'Banking'], ['audit', 'Audit'], ['case', 'Case law']];
-  var COL = { circ: 'var(--gold)', tax: 'var(--tax)', law: 'var(--law)', company: 'var(--company)', bank: 'var(--bank)', audit: 'var(--audit)', case: 'var(--case)' };
+  var CATS = [['all', 'All'], ['tax', 'Tax'], ['circ', 'Circulars'], ['law', 'Law'], ['company', 'Company'], ['bank', 'Banking'], ['audit', 'Audit'], ['student', 'Students'], ['case', 'Case law']];
+  var COL = { circ: 'var(--gold)', tax: 'var(--tax)', law: 'var(--law)', company: 'var(--company)', bank: 'var(--bank)', audit: 'var(--audit)', student: 'var(--student)', case: 'var(--case)' };
   var CA_RE = /vat|tds|tax|rate|finance act|income tax|excise|companies act|company act|nfrs|nsa|audit|udin|directive|circular|procurement|amendment|ordinance|aml|beneficial|कर|आयकर|मूल्य अभिवृद्धि|आर्थिक ऐन|कम्पनी ऐन|खरिद|संशोधन|अध्यादेश|ऐन|नियमावली|निर्देशन|परिपत्र|निर्देशिका/i;
   var PAGE = 20;
 
@@ -78,7 +78,7 @@
     var t = $('tabs'), p = pool();
     t.textContent = '';
     CATS.forEach(function (c) {
-      var n = p.filter(function (i) { return c[0] === 'all' ? i.cat !== 'case' : inCat(i, c[0]); }).length;
+      var n = p.filter(function (i) { return c[0] === 'all' ? (i.cat !== 'case' && i.cat !== 'student') : inCat(i, c[0]); }).length;
       if (c[0] !== 'all' && c[0] !== 'case' && !n) return;
       var b = el('button', 'tab' + (cat === c[0] ? ' on' : ''), c[1]);
       b.type = 'button';
@@ -106,7 +106,7 @@
   function ok(i) {
     if (caOnly && caScore(i) < 2) return false;
     if (cat !== 'all' && !inCat(i, cat)) return false;
-    if (cat === 'all' && i.cat === 'case' && !q) return false;
+    if (cat === 'all' && ((i.cat === 'case' && !q) || i.cat === 'student')) return false;
     if (tag && (i.tags || []).indexOf(tag) < 0) return false;
     if (!q) return true;
     var h = ((i.title || '') + ' ' + (i.title_en || '') + ' ' + (i.summary || '') + ' ' + (i.tags || []).join(' ') + ' ' + (i.source || '') + ' ' + (i.pub || '') +
@@ -404,8 +404,8 @@
       items.sort(function (a, b) { return ts(b) - ts(a); });
       updated = typeof d.updated === 'number' ? d.updated : 0;
       var now = Date.now() / 1000, srcs = {};
-      items.forEach(function (i) { if (i.cat !== 'case' && i.source) srcs[i.source] = 1; });
-      $('stNew').textContent = items.filter(function (i) { return i.cat !== 'case' && now - i.first_seen < 7 * 86400; }).length;
+      items.forEach(function (i) { if (i.cat !== 'case' && i.cat !== 'student' && i.source) srcs[i.source] = 1; });
+      $('stNew').textContent = items.filter(function (i) { return i.cat !== 'case' && i.cat !== 'student' && now - i.first_seen < 7 * 86400; }).length;
       $('stKey').textContent = items.filter(function (i) { return i.ca === 3 && now - ts(i) < 7 * 86400; }).length;
       $('stSrc').textContent = Array.isArray(d.health) && d.health.length ? d.health.length : Object.keys(srcs).length;
       $('stChk').textContent = updated ? ago(updated) : '–';
