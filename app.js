@@ -2,7 +2,7 @@
   'use strict';
 
   // 'circ' is not a category: it lists items typed "circular" (IRD सूचना, NRB circulars, any परिपत्र) from every category
-  var CATS = [['all', 'All'], ['student', 'Students'], ['tax', 'Tax'], ['circ', 'Circulars'], ['law', 'Law'], ['company', 'Company'], ['bank', 'Banking'], ['audit', 'Audit'], ['case', 'Case law']];
+  var CATS = [['all', 'All'], ['tax', 'Tax'], ['circ', 'Circulars'], ['law', 'Law'], ['company', 'Company'], ['bank', 'Banking'], ['audit', 'Audit'], ['case', 'Case law'], ['student', 'Students']];
   var COL = { circ: 'var(--gold)', tax: 'var(--tax)', law: 'var(--law)', company: 'var(--company)', bank: 'var(--bank)', audit: 'var(--audit)', student: 'var(--student)', case: 'var(--case)' };
   var CA_RE = /vat|tds|tax|rate|finance act|income tax|excise|companies act|company act|nfrs|nsa|audit|udin|directive|circular|procurement|amendment|ordinance|aml|beneficial|कर|आयकर|मूल्य अभिवृद्धि|आर्थिक ऐन|कम्पनी ऐन|खरिद|संशोधन|अध्यादेश|ऐन|नियमावली|निर्देशन|परिपत्र|निर्देशिका/i;
   var PAGE = 20;
