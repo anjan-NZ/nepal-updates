@@ -123,8 +123,8 @@
     if (cat === 'all' && ((i.cat === 'case' && !q) || i.cat === 'student')) return false;
     if (tag && (i.tags || []).indexOf(tag) < 0) return false;
     if (rFrom || rTo) {
-      var t = ts(i);
-      if ((rFrom && t < rFrom) || (rTo && t >= rTo + 86400)) return false;
+      var t = ts(i), lo = rFrom || rTo, hi = rTo || rFrom;
+      if (t < lo || t >= hi + 86400) return false;
     }
     if (!q) return true;
     var h = ((i.title || '') + ' ' + (i.title_en || '') + ' ' + (i.summary || '') + ' ' + (i.tags || []).join(' ') + ' ' + (i.source || '') + ' ' + (i.pub || '') +
@@ -367,9 +367,9 @@
     more();
   }
 
-  // date range: AD (native date input) or BS (year/month/day selects); stored as UTC day-start seconds
+  // date filter: one date = that day; add "To" for a range. AD (native input) or BS (year/month/day selects); stored as UTC day-start seconds
   var MONTHS = ['Baisakh', 'Jestha', 'Asar', 'Shrawan', 'Bhadra', 'Ashwin', 'Kartik', 'Mangsir', 'Poush', 'Magh', 'Falgun', 'Chaitra'];
-  var cal = 'ad', dmode = 'range', rFrom = 0, rTo = 0;
+  var cal = 'ad', rFrom = 0, rTo = 0;
   function opt(sel, v, label) { var o = el('option', null, label); o.value = v; sel.appendChild(o); }
   function mkPicker(box, t, label, onChange) {
     box.textContent = '';
@@ -400,38 +400,41 @@
     sy.addEventListener('change', fire); sd.addEventListener('change', fire);
     box.appendChild(sy); box.appendChild(sm); box.appendChild(sd);
   }
+  function fmtDay(t) {
+    if (cal === 'bs') { var b = tsBs(t); return b[2] + ' ' + MONTHS[b[1] - 1] + ' ' + b[0]; }
+    return new Date(t * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  }
+  function drawLabel() {
+    var lo = rFrom || rTo, hi = rTo || rFrom;
+    $('dLbl').textContent = !lo ? 'Any date' : lo === hi ? fmtDay(lo) : fmtDay(lo) + ' – ' + fmtDay(hi);
+    $('dBtn').classList.toggle('on', !!lo);
+    $('dClr').hidden = !lo;
+  }
   function drawDates() {
-    var one = dmode === 'day';
-    $('dFromL').textContent = one ? 'Date' : 'From';
-    mkPicker($('dFrom'), rFrom, one ? 'Date' : 'From', function (t) { rFrom = t; if (one) rTo = t; rangeChanged(); });
+    mkPicker($('dFrom'), rFrom, 'Date', function (t) { rFrom = t; rangeChanged(); });
     mkPicker($('dTo'), rTo, 'To', function (t) { rTo = t; rangeChanged(); });
-    $('dClr').hidden = !(rFrom || rTo);
-    $('dates').classList.toggle('bs', cal === 'bs');
-    $('dates').classList.toggle('day', one);
-    [['cal', 'data-c', cal], ['dmode', 'data-m', dmode]].forEach(function (g) {
-      Array.prototype.forEach.call($(g[0]).querySelectorAll('button'), function (b) {
-        var on = b.getAttribute(g[1]) === g[2];
-        b.classList.toggle('on', on);
-        b.setAttribute('aria-pressed', on ? 'true' : 'false');
-      });
+    drawLabel();
+    $('dPanel').classList.toggle('bs', cal === 'bs');
+    Array.prototype.forEach.call($('cal').querySelectorAll('button'), function (b) {
+      var on = b.getAttribute('data-c') === cal;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
   function rangeChanged() {
     if (rFrom && rTo && rFrom > rTo) { var s = rFrom; rFrom = rTo; rTo = s; drawDates(); }
-    else $('dClr').hidden = !(rFrom || rTo);
+    else drawLabel();
     apply();
   }
+  $('dBtn').addEventListener('click', function () {
+    var open = $('dPanel').hidden;
+    $('dPanel').hidden = !open;
+    this.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
   $('cal').addEventListener('click', function (e) {
     var b = e.target.closest('button');
     if (!b || b.getAttribute('data-c') === cal) return;
     cal = b.getAttribute('data-c');
-    drawDates();
-  });
-  $('dmode').addEventListener('click', function (e) {
-    var b = e.target.closest('button');
-    if (!b || b.getAttribute('data-m') === dmode) return;
-    dmode = b.getAttribute('data-m');
-    if (dmode === 'day') { rFrom = rTo = rFrom || rTo; apply(); }
     drawDates();
   });
   $('dClr').addEventListener('click', function () { rFrom = rTo = 0; drawDates(); apply(); });

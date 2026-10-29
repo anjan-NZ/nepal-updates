@@ -90,23 +90,13 @@
       <button class="sw on" id="ca" type="button" aria-pressed="true">For CAs<i></i></button>
     </div>
     <div class="tabs" id="tabs" role="tablist" aria-label="Category"></div>
-    <div class="row daterow" id="dates" role="group" aria-label="Date range">
-      <div class="seg" id="cal" role="group" aria-label="Calendar">
-        <button type="button" data-c="ad" class="on" aria-pressed="true">AD</button><button type="button" data-c="bs" aria-pressed="false">BS</button>
-      </div>
-      <div class="seg" id="dmode" role="group" aria-label="Range or single day">
-        <button type="button" data-m="range" class="on" aria-pressed="true">Range</button><button type="button" data-m="day" aria-pressed="false">One day</button>
-      </div>
-      <span class="dgrp"><small id="dFromL">From</small><span id="dFrom" class="pick"></span></span>
-      <span class="dgrp" id="dToG"><small>To</small><span id="dTo" class="pick"></span></span>
-      <button type="button" id="dClr" class="dclr" hidden>Clear</button>
-    </div>
     <div class="chips" id="tags" aria-label="Tags"></div>
     <a class="statuslink" href="status.html">Source status: which sites are being checked</a>
   </aside>
 
   <div class="feed">
 
+  <div class="tools">
   <details class="askall" id="askAll">
     <summary>Ask AI about the posts listed below</summary>
     <form class="askrow" id="askAllForm">
@@ -115,6 +105,22 @@
     </form>
     <p class="ans" id="askAllAns" aria-live="polite" hidden></p>
   </details>
+
+  <div class="datebox" id="dates">
+    <div class="dbar">
+      <button type="button" id="dBtn" class="dbtn" aria-expanded="false" aria-controls="dPanel"><b>Date</b><span id="dLbl">Any date</span><i aria-hidden="true"></i></button>
+      <button type="button" id="dClr" class="dclr" hidden>Clear</button>
+    </div>
+    <div class="dpanel" id="dPanel" hidden>
+      <div class="seg" id="cal" role="group" aria-label="Calendar">
+        <button type="button" data-c="ad" class="on" aria-pressed="true">AD</button><button type="button" data-c="bs" aria-pressed="false">BS</button>
+      </div>
+      <span class="dgrp"><small>Date (or from)</small><span id="dFrom" class="pick"></span></span>
+      <span class="dgrp"><small>To (optional)</small><span id="dTo" class="pick"></span></span>
+      <p class="dhint">Pick one date to see that day only. Add a To date for a range.</p>
+    </div>
+  </div>
+  </div>
 
   <section id="list" aria-live="polite"><div class="sk"></div><div class="sk"></div><div class="sk"></div></section>
   <div class="morewrap"><button id="more" type="button" hidden>Show more</button></div>
