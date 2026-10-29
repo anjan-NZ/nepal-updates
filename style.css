@@ -122,6 +122,23 @@ input[type=search]:focus { border-color: var(--accent); background: var(--card-2
 }
 .seg button.on { background: var(--accent-2); color: #fff; }
 .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.daterow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; align-items: stretch; }
+.daterow .seg { grid-column: 1 / -1; justify-self: start; }
+.daterow .seg + .seg { margin-top: -2px; }
+.daterow.day .dgrp { grid-column: 1 / -1; }
+.daterow.day #dToG { display: none; }
+.dgrp { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.dgrp small { color: var(--dim); font-size: 12px; font-weight: 600; }
+.pick { display: flex; gap: 4px; min-width: 0; }
+.pick input, .pick select {
+  flex: 1; min-width: 0; width: 100%; padding: 8px; border-radius: 9px; border: 1px solid var(--line); background: var(--card);
+  color: var(--white); font: inherit; font-size: 13px; outline: none; color-scheme: dark light;
+}
+.daterow.bs .dgrp, .dclr { grid-column: 1 / -1; }
+.dclr { justify-self: start; }
+@media (min-width: 561px) and (max-width: 1099px) { .daterow, .daterow.bs { grid-template-columns: auto 1fr 1fr auto; align-items: end; } .daterow .seg, .daterow .dgrp, .daterow.bs .dgrp, .daterow.day .dgrp, .dclr { grid-column: auto; } .daterow.day, .daterow.day.bs { grid-template-columns: auto auto 1fr auto; } }
+.pick input:focus, .pick select:focus { border-color: var(--accent); }
+.dclr { background: none; border: 0; color: var(--accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 6px 2px; }
 .orig { margin: -2px 0 8px; font-size: 13px; line-height: 1.45; color: var(--dim); }
 .sw.on { color: var(--white); }
 .sw.on i { background: var(--accent-2); }

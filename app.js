@@ -27,17 +27,26 @@
   function caScore(i) { return typeof i.ca === 'number' ? i.ca : (CA_RE.test(i.title + ' ' + (i.summary || '')) ? 2 : 1); }
   // AD dates as-is; Bikram Sambat ones (2082/02/10, २०८२।०२।१०) converted to an AD date good to a day or two
   var BS_LEN = [31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30];
+  function bsTs(y, mo, d) {
+    var days = d - 1;
+    for (var k = 0; k < mo - 1; k++) days += BS_LEN[k];
+    return Date.UTC(y - 57, 3, 14 + days) / 1000;
+  }
+  function tsBs(t) {
+    var y = new Date(t * 1000).getUTCFullYear() + 57;
+    if (bsTs(y, 1, 1) > t) y--;
+    var days = Math.floor((t - bsTs(y, 1, 1)) / 86400), mo = 0;
+    while (mo < 11 && days >= BS_LEN[mo]) { days -= BS_LEN[mo]; mo++; }
+    return [y, mo + 1, days + 1];
+  }
   function isoTs(p) {
     p = String(p || '').replace(/[०-९]/g, function (d) { return '०१२३४५६७८९'.indexOf(d); });
     var m = /^(\d{4})[-\/.।](\d{1,2})[-\/.।](\d{1,2})/.exec(p);
     if (!m) return 0;
     var y = +m[1], mo = +m[2], d = +m[3], t;
     if (mo < 1 || mo > 12 || d < 1 || d > 32) return 0;
-    if (y >= 2060 && y <= 2110) {
-      var days = d - 1;
-      for (var k = 0; k < mo - 1; k++) days += BS_LEN[k];
-      t = Date.UTC(y - 57, 3, 14 + days) / 1000;
-    } else if (y >= 1990 && y <= new Date().getFullYear() + 1) t = Date.UTC(y, mo - 1, d) / 1000;
+    if (y >= 2060 && y <= 2110) t = bsTs(y, mo, d);
+    else if (y >= 1990 && y <= new Date().getFullYear() + 1) t = Date.UTC(y, mo - 1, d) / 1000;
     else return 0;
     return t > Date.now() / 1000 + 86400 ? 0 : t;
   }
@@ -113,6 +122,10 @@
     if (cat !== 'all' && !inCat(i, cat)) return false;
     if (cat === 'all' && ((i.cat === 'case' && !q) || i.cat === 'student')) return false;
     if (tag && (i.tags || []).indexOf(tag) < 0) return false;
+    if (rFrom || rTo) {
+      var t = ts(i);
+      if ((rFrom && t < rFrom) || (rTo && t >= rTo + 86400)) return false;
+    }
     if (!q) return true;
     var h = ((i.title || '') + ' ' + (i.title_en || '') + ' ' + (i.summary || '') + ' ' + (i.tags || []).join(' ') + ' ' + (i.source || '') + ' ' + (i.pub || '') +
       (i.type === 'circular' ? ' circular परिपत्र' : '')).toLowerCase();
@@ -345,13 +358,84 @@
       rows.length + ' item' + (rows.length === 1 ? '' : 's') + (updated ? ' · checked ' + ago(updated) : '');
     if (!rows.length) {
       var e = el('div', 'empty');
-      e.appendChild(el('b', null, q ? 'No matches' : 'Nothing here yet'));
-      e.appendChild(document.createTextNode(q ? 'Try fewer or different words.' : caOnly ? 'Nothing CA-relevant here. Switch off "For CAs" to see everything.' : 'New items appear after the next check.'));
+      var ranged = rFrom || rTo;
+      e.appendChild(el('b', null, q ? 'No matches' : ranged ? 'Nothing in this date range' : 'Nothing here yet'));
+      e.appendChild(document.createTextNode(q ? 'Try fewer or different words.' : ranged ? 'Widen or clear the dates.' : caOnly ? 'Nothing CA-relevant here. Switch off "For CAs" to see everything.' : 'New items appear after the next check.'));
       $('list').appendChild(e);
       return;
     }
     more();
   }
+
+  // date range: AD (native date input) or BS (year/month/day selects); stored as UTC day-start seconds
+  var MONTHS = ['Baisakh', 'Jestha', 'Asar', 'Shrawan', 'Bhadra', 'Ashwin', 'Kartik', 'Mangsir', 'Poush', 'Magh', 'Falgun', 'Chaitra'];
+  var cal = 'ad', dmode = 'range', rFrom = 0, rTo = 0;
+  function opt(sel, v, label) { var o = el('option', null, label); o.value = v; sel.appendChild(o); }
+  function mkPicker(box, t, label, onChange) {
+    box.textContent = '';
+    if (cal === 'ad') {
+      var inp = el('input'); inp.type = 'date'; inp.setAttribute('aria-label', label + ' (AD)');
+      if (t) inp.value = new Date(t * 1000).toISOString().slice(0, 10);
+      inp.addEventListener('change', function () {
+        var m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(inp.value);
+        onChange(m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 1000 : 0);
+      });
+      box.appendChild(inp);
+      return;
+    }
+    var cur = tsBs(Date.now() / 1000), v = t ? tsBs(t) : ['', '', ''];
+    var sy = el('select'), sm = el('select'), sd = el('select');
+    sy.setAttribute('aria-label', label + ' year (BS)'); sm.setAttribute('aria-label', label + ' month (BS)'); sd.setAttribute('aria-label', label + ' day (BS)');
+    opt(sy, '', 'Year'); for (var y = cur[0]; y >= 2070; y--) opt(sy, y, y);
+    opt(sm, '', 'Month'); MONTHS.forEach(function (n, k) { opt(sm, k + 1, n); });
+    function days() {
+      var keep = sd.value, n = sm.value ? BS_LEN[sm.value - 1] : 32;
+      sd.textContent = ''; opt(sd, '', 'Day');
+      for (var d = 1; d <= n; d++) opt(sd, d, d);
+      sd.value = keep && +keep <= n ? keep : '';
+    }
+    sy.value = v[0]; sm.value = v[1]; days(); sd.value = v[2];
+    function fire() { onChange(sy.value && sm.value && sd.value ? bsTs(+sy.value, +sm.value, +sd.value) : 0); }
+    sm.addEventListener('change', function () { days(); fire(); });
+    sy.addEventListener('change', fire); sd.addEventListener('change', fire);
+    box.appendChild(sy); box.appendChild(sm); box.appendChild(sd);
+  }
+  function drawDates() {
+    var one = dmode === 'day';
+    $('dFromL').textContent = one ? 'Date' : 'From';
+    mkPicker($('dFrom'), rFrom, one ? 'Date' : 'From', function (t) { rFrom = t; if (one) rTo = t; rangeChanged(); });
+    mkPicker($('dTo'), rTo, 'To', function (t) { rTo = t; rangeChanged(); });
+    $('dClr').hidden = !(rFrom || rTo);
+    $('dates').classList.toggle('bs', cal === 'bs');
+    $('dates').classList.toggle('day', one);
+    [['cal', 'data-c', cal], ['dmode', 'data-m', dmode]].forEach(function (g) {
+      Array.prototype.forEach.call($(g[0]).querySelectorAll('button'), function (b) {
+        var on = b.getAttribute(g[1]) === g[2];
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    });
+  }
+  function rangeChanged() {
+    if (rFrom && rTo && rFrom > rTo) { var s = rFrom; rFrom = rTo; rTo = s; drawDates(); }
+    else $('dClr').hidden = !(rFrom || rTo);
+    apply();
+  }
+  $('cal').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b || b.getAttribute('data-c') === cal) return;
+    cal = b.getAttribute('data-c');
+    drawDates();
+  });
+  $('dmode').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b || b.getAttribute('data-m') === dmode) return;
+    dmode = b.getAttribute('data-m');
+    if (dmode === 'day') { rFrom = rTo = rFrom || rTo; apply(); }
+    drawDates();
+  });
+  $('dClr').addEventListener('click', function () { rFrom = rTo = 0; drawDates(); apply(); });
+  drawDates();
 
   var timer;
   $('q').addEventListener('input', function (e) {
