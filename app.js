@@ -139,7 +139,7 @@
     head.appendChild(el('b', null, i.source));
     head.appendChild(el('span', null, i.cat === 'case'
       ? [i.kind, i.pub && 'decided ' + i.pub, i.case_no].filter(Boolean).join(' · ')
-      : (i.pub ? i.pub + ' · ' : '') + ago(ts(i))));
+      : (i.pub ? i.pub + ' · ' : isoTs(i.pub) ? '' : 'first seen ') + ago(ts(i))));
     if (i.ca === 3) head.appendChild(el('span', 'badge key', 'KEY'));
     if (i.type === 'circular') head.appendChild(el('span', 'badge circ', 'CIRCULAR'));
     c.appendChild(head);
@@ -340,7 +340,7 @@
   function more() {
     var list = $('list'), end = Math.min(rows.length, shown + PAGE);
     for (; shown < end; shown++) {
-      var i = rows[shown], dl = i.cat === 'case' ? (i.volume || 'Case law') : dayLabel(ts(i));
+      var i = rows[shown], dl = i.cat === 'case' ? (i.volume || 'Case law') : (isoTs(i.pub) ? '' : 'First seen · ') + dayLabel(ts(i));
       if (dl !== lastDay) { list.appendChild(el('div', 'day', dl)); lastDay = dl; }
       list.appendChild(card(i));
     }
