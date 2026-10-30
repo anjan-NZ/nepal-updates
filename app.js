@@ -5,7 +5,7 @@
   var CATS = [['all', 'All'], ['tax', 'Tax'], ['circ', 'Circulars'], ['law', 'Law'], ['company', 'Company'], ['bank', 'Banking'], ['audit', 'Audit'], ['case', 'Case law'], ['student', 'Students']];
   var COL = { circ: 'var(--gold)', tax: 'var(--tax)', law: 'var(--law)', company: 'var(--company)', bank: 'var(--bank)', audit: 'var(--audit)', student: 'var(--student)', case: 'var(--case)' };
   var CA_RE = /vat|tds|tax|rate|finance act|income tax|excise|companies act|company act|nfrs|nsa|audit|udin|directive|circular|procurement|amendment|ordinance|aml|beneficial|कर|आयकर|मूल्य अभिवृद्धि|आर्थिक ऐन|कम्पनी ऐन|खरिद|संशोधन|अध्यादेश|ऐन|नियमावली|निर्देशन|परिपत्र|निर्देशिका/i;
-  var PAGE = 20;
+  var PAGE = 20, PIN = 'FDI';  // PIN: tag chip always shown first
 
   var items = [], rows = [], cat = 'all', tag = null, q = '', shown = 0, caOnly = true, lastDay = '';
   var lang = 'np', updated = 0;  // Nepali (original) titles by default
@@ -109,7 +109,9 @@
       if (cat !== 'all' && !inCat(i, cat)) return;
       (i.tags || []).forEach(function (v) { if (v) m[v] = (m[v] || 0) + 1; });
     });
-    Object.keys(m).sort(function (a, b) { return m[b] - m[a]; }).slice(0, 14).forEach(function (v) {
+    var top = Object.keys(m).filter(function (v) { return v !== PIN; }).sort(function (a, b) { return m[b] - m[a]; }).slice(0, 13);
+    if (items.some(function (i) { return (i.tags || []).indexOf(PIN) >= 0; })) top.unshift(PIN);  // FDI is pinned first, even when few items carry it
+    top.forEach(function (v) {
       var b = el('button', 'chip' + (tag === v ? ' on' : ''), v);
       b.type = 'button';
       b.addEventListener('click', function () { tag = tag === v ? null : v; apply(); });
@@ -118,7 +120,7 @@
   }
 
   function ok(i) {
-    if (caOnly && caScore(i) < 2) return false;
+    if (caOnly && caScore(i) < 2 && tag !== PIN) return false;  // the FDI chip shows every FDI item, not just the CA-scored ones
     if (cat !== 'all' && !inCat(i, cat)) return false;
     if (cat === 'all' && ((i.cat === 'case' && !q) || i.cat === 'student')) return false;
     if (tag && (i.tags || []).indexOf(tag) < 0) return false;
