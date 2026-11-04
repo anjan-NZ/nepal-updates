@@ -2,8 +2,8 @@
   'use strict';
 
   // 'circ' is not a category: it lists items typed "circular" (IRD सूचना, NRB circulars, any परिपत्र) from every category
-  var CATS = [['all', 'All'], ['tax', 'Tax'], ['circ', 'Circulars'], ['law', 'Law'], ['company', 'Company'], ['bank', 'Banking'], ['audit', 'Audit'], ['case', 'Case law'], ['student', 'Students']];
-  var COL = { circ: 'var(--gold)', tax: 'var(--tax)', law: 'var(--law)', company: 'var(--company)', bank: 'var(--bank)', audit: 'var(--audit)', student: 'var(--student)', case: 'var(--case)' };
+  var CATS = [['all', 'All'], ['tax', 'Tax'], ['circ', 'Circulars'], ['law', 'Law'], ['company', 'Company'], ['bank', 'Banking'], ['ins', 'Insurance (NIA)'], ['audit', 'Audit'], ['case', 'Case law'], ['student', 'Students']];
+  var COL = { circ: 'var(--gold)', tax: 'var(--tax)', law: 'var(--law)', company: 'var(--company)', bank: 'var(--bank)', ins: 'var(--audit)', audit: 'var(--audit)', student: 'var(--student)', case: 'var(--case)' };
   var CA_RE = /vat|tds|tax|rate|finance act|income tax|excise|companies act|company act|nfrs|nsa|audit|udin|directive|circular|procurement|amendment|ordinance|aml|beneficial|कर|आयकर|मूल्य अभिवृद्धि|आर्थिक ऐन|कम्पनी ऐन|खरिद|संशोधन|अध्यादेश|ऐन|नियमावली|निर्देशन|परिपत्र|निर्देशिका/i;
   var PAGE = 20, PIN = 'FDI';  // PIN: tag chip always shown first
 
@@ -12,7 +12,15 @@
   try { if (localStorage.getItem('lang') === 'en') lang = 'en'; } catch (e) { /* storage blocked: default Nepali */ }
   if (/^#students?$/i.test(location.hash)) cat = 'student';  // direct link: …/nepal-updates/#students
   if (/^#circulars?$/i.test(location.hash)) cat = 'circ';  // direct link: …/nepal-updates/#circulars
-  function inCat(i, c) { return c === 'circ' ? i.type === 'circular' && i.cat !== 'case' : i.cat === c; }
+  if (/^#(insurance|nia)$/i.test(location.hash)) cat = 'ins';  // direct link: …/nepal-updates/#insurance
+  // 'ins' is not a category either: Insurance Authority items are stored under bank, and get their own tab instead of Banking
+  function isIns(i) { return i.source === 'Insurance Authority'; }
+  function inCat(i, c) {
+    if (c === 'circ') return i.type === 'circular' && i.cat !== 'case';
+    if (c === 'ins') return isIns(i);
+    if (c === 'bank') return i.cat === 'bank' && !isIns(i);
+    return i.cat === c;
+  }
   var $ = function (id) { return document.getElementById(id); };
 
   function el(tag, cls, text) {
