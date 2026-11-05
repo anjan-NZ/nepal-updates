@@ -231,12 +231,14 @@
       why: i.why || '', tags: i.tags || [], url: i.url, pdf: i.pdf || '' };
   }
 
+  // short names people type -> the full name the notices use
+  var ALIAS = { salico: 'sagarmatha lumbini', nlic: 'nepal life', slic: 'surya life', nrb: 'rastra bank', ird: 'inland revenue' };
   // list mode: the AI also says which numbered posts match, so the page can show only those
   var SYS_LIST = SYS.replace(/ End with: .*$/, '') +
     ' The data is a numbered list of notices (field n). Reply with ONLY a JSON object, no other text: ' +
     '{"filter": true or false, "match": [n, ...], "answer": "short reply"}. ' +
     'Set filter true when the user asks to list, show, filter or see only the notices about some topic, company or organisation; ' +
-    'then match must hold the n of EVERY notice whose title, summary or tags clearly mention or concern it (spelling variants and Nepali/English names count). ' +
+    'then match must hold the n of EVERY notice whose title, summary or tags clearly mention or concern it (spelling variants, abbreviations and Nepali/English names count; for example SALICO is Sagarmatha Lumbini Insurance Co. Ltd.). ' +
     'For any other question set filter false, match [], and put the reply in answer. End answer with: "Check the official source before relying on this."';
 
   function callAI(question, context, sys, maxTok) {
@@ -356,8 +358,15 @@
     if (!qq) return;
     // candidate posts = what the filters/search allow, ignoring any earlier AI filter so a new question starts fresh
     var keep = aiSet; aiSet = null;
-    var cand = items.filter(ok).slice(0, 100);
+    var all = items.filter(ok);
     aiSet = keep;
+    // posts that mention the question's words go first, so older matches are not cut off by the newest-100 window
+    var words = qq.toLowerCase().split(/[^a-z0-9ऀ-ॿ]+/).filter(function (w) { return w.length >= 3; });
+    words.slice().forEach(function (w) { if (ALIAS[w]) words.push(ALIAS[w]); });
+    function hay(i) { return ((i.title || '') + ' ' + (i.title_en || '') + ' ' + (i.summary || '') + ' ' + (i.tags || []).join(' ')).toLowerCase(); }
+    var hits = words.length ? all.filter(function (i) { var h = hay(i); return words.some(function (w) { return h.indexOf(w) >= 0; }); }) : [];
+    hits = hits.slice(0, 60);
+    var cand = hits.concat(all.filter(function (i) { return hits.indexOf(i) < 0; })).slice(0, 100);
     var ctx = cand.map(function (i, n) {
       return { n: n, source: i.source, date: i.pub || '', title: i.title, title_en: i.title_en || '',
         summary: (i.summary || '').slice(0, 140), tags: i.tags || [] };
