@@ -364,12 +364,18 @@
     var words = qq.toLowerCase().split(/[^a-z0-9ऀ-ॿ]+/).filter(function (w) { return w.length >= 3; });
     words.slice().forEach(function (w) { if (ALIAS[w]) words.push(ALIAS[w]); });
     function hay(i) { return ((i.title || '') + ' ' + (i.title_en || '') + ' ' + (i.summary || '') + ' ' + (i.tags || []).join(' ')).toLowerCase(); }
-    var hits = words.length ? all.filter(function (i) { var h = hay(i); return words.some(function (w) { return h.indexOf(w) >= 0; }); }) : [];
-    hits = hits.slice(0, 60);
+    var hs = all.map(hay);
+    // a word found in more than 8% of posts ("the", "list", "about") says nothing; rarer words weigh more
+    var wt = words.map(function (w) {
+      var n = hs.filter(function (h) { return h.indexOf(w) >= 0; }).length;
+      return n && n <= all.length * 0.08 ? 1 / n : 0;
+    });
+    var sc = all.map(function (i, k) { return wt.reduce(function (s, x, j) { return s + (x && hs[k].indexOf(words[j]) >= 0 ? x : 0); }, 0); });
+    var hits = all.filter(function (i, k) { return sc[k] > 0; }).sort(function (a, b) { return sc[all.indexOf(b)] - sc[all.indexOf(a)]; }).slice(0, 60);
     var cand = hits.concat(all.filter(function (i) { return hits.indexOf(i) < 0; })).slice(0, 100);
     var ctx = cand.map(function (i, n) {
       return { n: n, source: i.source, date: i.pub || '', title: i.title, title_en: i.title_en || '',
-        summary: (i.summary || '').slice(0, 140), tags: i.tags || [] };
+        summary: (i.summary || '').slice(0, 240), tags: i.tags || [] };
     });
     var out = $('askAllAns');
     runAsk(qq, ctx, out, this.querySelector('button'), function (t) {
