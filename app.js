@@ -7,6 +7,7 @@
   var CA_RE = /vat|tds|tax|rate|finance act|income tax|excise|companies act|company act|nfrs|nsa|audit|udin|directive|circular|procurement|amendment|ordinance|aml|beneficial|कर|आयकर|मूल्य अभिवृद्धि|आर्थिक ऐन|कम्पनी ऐन|खरिद|संशोधन|अध्यादेश|ऐन|नियमावली|निर्देशन|परिपत्र|निर्देशिका/i;
   var PAGE = 20, PIN = 'FDI';  // PIN: tag chip always shown first
 
+  var aiSet = null;  // posts picked by "Ask AI about the posts listed below" (null = no AI filter)
   var items = [], rows = [], cat = 'all', tag = null, q = '', shown = 0, caOnly = true, lastDay = '';
   var lang = 'np', updated = 0;  // Nepali (original) titles by default
   try { if (localStorage.getItem('lang') === 'en') lang = 'en'; } catch (e) { /* storage blocked: default Nepali */ }
@@ -128,6 +129,7 @@
   }
 
   function ok(i) {
+    if (aiSet && !aiSet.has(i)) return false;
     if (caOnly && caScore(i) < 2 && tag !== PIN) return false;  // the FDI chip shows every FDI item, not just the CA-scored ones
     if (cat !== 'all' && !inCat(i, cat)) return false;
     if (cat === 'all' && ((i.cat === 'case' && !q) || i.cat === 'student')) return false;
@@ -229,9 +231,18 @@
       why: i.why || '', tags: i.tags || [], url: i.url, pdf: i.pdf || '' };
   }
 
-  function callAI(question, context) {
+  // list mode: the AI also says which numbered posts match, so the page can show only those
+  var SYS_LIST = SYS.replace(/ End with: .*$/, '') +
+    ' The data is a numbered list of notices (field n). Reply with ONLY a JSON object, no other text: ' +
+    '{"filter": true or false, "match": [n, ...], "answer": "short reply"}. ' +
+    'Set filter true when the user asks to list, show, filter or see only the notices about some topic, company or organisation; ' +
+    'then match must hold the n of EVERY notice whose title, summary or tags clearly mention or concern it (spelling variants and Nepali/English names count). ' +
+    'For any other question set filter false, match [], and put the reply in answer. End answer with: "Check the official source before relying on this."';
+
+  function callAI(question, context, sys, maxTok) {
     var cfg = memCfg;
     if (!cfg || !cfg.k) return Promise.reject(new Error('nokey'));
+    sys = sys || SYS; maxTok = maxTok || 700;
     var model = cfg.m || PROV[cfg.p].model;
     var user = 'Notice data (JSON):\n' + JSON.stringify(context) + '\n\nQuestion: ' + question;
     var req;
@@ -239,15 +250,15 @@
       req = fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
         method: 'POST', credentials: 'omit', referrerPolicy: 'no-referrer',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': cfg.k },
-        body: JSON.stringify({ systemInstruction: { parts: [{ text: SYS }] }, contents: [{ role: 'user', parts: [{ text: user }] }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 700 } })
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: [{ role: 'user', parts: [{ text: user }] }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: maxTok } })
       });
     } else {
       req = fetch(cfg.p === 'groq' ? 'https://api.groq.com/openai/v1/chat/completions' : 'https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST', credentials: 'omit', referrerPolicy: 'no-referrer',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.k },
-        body: JSON.stringify({ model: model, temperature: 0.2, max_tokens: 700,
-          messages: [{ role: 'system', content: SYS }, { role: 'user', content: user }] })
+        body: JSON.stringify({ model: model, temperature: 0.2, max_tokens: maxTok,
+          messages: [{ role: 'system', content: sys }, { role: 'user', content: user }] })
       });
     }
     return req.then(function (r) {
@@ -268,15 +279,15 @@
     });
   }
 
-  function runAsk(question, context, out, btn) {
+  function runAsk(question, context, out, btn, onText, sys, maxTok) {
     if (!memCfg) { openDlg(); return; }
     out.hidden = false;
     out.className = 'ans wait';
     out.textContent = 'Thinking…';
     btn.disabled = true;
-    callAI(question, context).then(function (t) {
+    callAI(question, context, sys, maxTok).then(function (t) {
       out.className = 'ans';
-      out.textContent = t;
+      if (onText) onText(t); else out.textContent = t;
     }, function (e) {
       out.className = 'ans err';
       out.textContent = e.message === 'nokey' ? 'Add your AI key first (Ask AI, top right).' :
@@ -343,8 +354,33 @@
     e.preventDefault();
     var qq = $('askAllQ').value.trim();
     if (!qq) return;
-    var ctx = rows.slice(0, 60).map(slimItem);  // the posts currently listed (filters + search applied)
-    runAsk(qq, ctx, $('askAllAns'), this.querySelector('button'));
+    // candidate posts = what the filters/search allow, ignoring any earlier AI filter so a new question starts fresh
+    var keep = aiSet; aiSet = null;
+    var cand = items.filter(ok).slice(0, 100);
+    aiSet = keep;
+    var ctx = cand.map(function (i, n) {
+      return { n: n, source: i.source, date: i.pub || '', title: i.title, title_en: i.title_en || '',
+        summary: (i.summary || '').slice(0, 140), tags: i.tags || [] };
+    });
+    var out = $('askAllAns');
+    runAsk(qq, ctx, out, this.querySelector('button'), function (t) {
+      var r = null;
+      try { r = JSON.parse((/\{[\s\S]*\}/.exec(t) || [''])[0]); } catch (x) { /* not JSON: show text as is */ }
+      if (!r || typeof r !== 'object') { out.textContent = t; return; }
+      out.textContent = String(r.answer || '').trim() || 'Done.';
+      var hit = Array.isArray(r.match) ? r.match.filter(function (n) { return cand[n]; }).map(function (n) { return cand[n]; }) : [];
+      if (r.filter === true && hit.length) {
+        aiSet = new Set(hit);
+        $('aiBarTxt').textContent = 'AI filter: showing ' + hit.length + ' post' + (hit.length === 1 ? '' : 's') + ' for “' + qq.slice(0, 60) + '”';
+        $('aiBar').hidden = false;
+        apply();
+      } else if (r.filter === true) {
+        out.textContent = 'No matching posts found among the ' + cand.length + ' listed. ' + (String(r.answer || '').trim());
+      }
+    }, SYS_LIST, 1200);
+  });
+  $('aiBarClr').addEventListener('click', function () {
+    aiSet = null; $('aiBar').hidden = true; apply();
   });
 
   function more() {
