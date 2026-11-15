@@ -8,7 +8,7 @@
   var PAGE = 20, PIN = 'FDI';  // PIN: tag chip always shown first
 
   var aiSet = null;  // posts picked by "Ask AI about the posts listed below" (null = no AI filter)
-  var items = [], rows = [], cat = 'all', tag = null, q = '', shown = 0, caOnly = true, lastDay = '';
+  var items = [], rows = [], cat = 'all', tag = null, q = '', shown = 0, caOnly = true, lastDay = '', gid = 0, total = 0;  // rows = groups to draw, total = items behind them
   var lang = 'np', updated = 0;  // Nepali (original) titles by default
   try { if (localStorage.getItem('lang') === 'en') lang = 'en'; } catch (e) { /* storage blocked: default Nepali */ }
   if (/^#students?$/i.test(location.hash)) cat = 'student';  // direct link: …/nepal-updates/#students
@@ -144,14 +144,51 @@
     return q.toLowerCase().split(/\s+/).every(function (w) { return h.indexOf(w) >= 0; });
   }
 
-  function card(i) {
+  // same source + same title (trimmed, whitespace collapsed) -> one card; the older ones go in a "+N more" list. Case law is never grouped
+  function gkey(i) { return i.cat === 'case' ? '' : String(i.title || '').replace(/\s+/g, ' ').trim(); }
+  function groupRows(list) {
+    var first = {}, out = [];
+    list.forEach(function (i) {
+      var k = gkey(i);
+      if (!k) { out.push({ i: i, rest: [] }); return; }
+      k = i.source + '|' + k;
+      if (first[k]) first[k].rest.push(i);  // list is newest first, so the first of a group is its newest
+      else { first[k] = { i: i, rest: [] }; out.push(first[k]); }
+    });
+    return out;
+  }
+  function dateText(i) { return (i.pub ? i.pub + ' · ' : isoTs(i.pub) ? '' : 'first seen ') + ago(ts(i)); }
+  function groupBox(rest) {
+    var box = el('div', 'grp'), btn = el('button', 'grpbtn', '+' + rest.length + ' more'), ul = el('ul', 'grplist');
+    btn.type = 'button';
+    btn.setAttribute('aria-expanded', 'false');
+    ul.hidden = true;
+    ul.id = 'g' + (++gid);
+    btn.setAttribute('aria-controls', ul.id);
+    rest.forEach(function (r) {
+      var li = el('li'), u = safeUrl(r.url);
+      li.appendChild(el('span', null, dateText(r)));
+      if (u) li.appendChild(link(null, u, 'Open source'));
+      ul.appendChild(li);
+    });
+    btn.addEventListener('click', function () {
+      var open = ul.hidden;
+      ul.hidden = !open;
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.textContent = open ? 'Hide' : '+' + rest.length + ' more';
+    });
+    box.appendChild(btn); box.appendChild(ul);
+    return box;
+  }
+
+  function card(i, rest) {
     var c = el('article', 'card');
     c.style.setProperty('--c', COL[i.cat] || 'var(--accent)');
     var head = el('div', 'head');
     head.appendChild(el('b', null, i.source));
     head.appendChild(el('span', null, i.cat === 'case'
       ? [i.kind, i.pub && 'decided ' + i.pub, i.case_no].filter(Boolean).join(' · ')
-      : (i.pub ? i.pub + ' · ' : isoTs(i.pub) ? '' : 'first seen ') + ago(ts(i))));
+      : dateText(i)));
     if (i.ca === 3) head.appendChild(el('span', 'badge key', 'KEY'));
     if (i.type === 'circular') head.appendChild(el('span', 'badge circ', 'CIRCULAR'));
     c.appendChild(head);
@@ -180,6 +217,7 @@
       c.appendChild(w);
     }
 
+    if (rest && rest.length) c.appendChild(groupBox(rest));
     var foot = el('div', 'foot-row');
     (i.tags || []).forEach(function (x) {
       var t = el('button', 't', '#' + x);
@@ -401,22 +439,24 @@
   function more() {
     var list = $('list'), end = Math.min(rows.length, shown + PAGE);
     for (; shown < end; shown++) {
-      var i = rows[shown], dl = i.cat === 'case' ? (i.volume || 'Case law') : (isoTs(i.pub) ? '' : 'First seen · ') + dayLabel(ts(i));
+      var g = rows[shown], i = g.i, dl = i.cat === 'case' ? (i.volume || 'Case law') : (isoTs(i.pub) ? '' : 'First seen · ') + dayLabel(ts(i));
       if (dl !== lastDay) { list.appendChild(el('div', 'day', dl)); lastDay = dl; }
-      list.appendChild(card(i));
+      list.appendChild(card(i, g.rest));
     }
     $('more').hidden = shown >= rows.length;
   }
 
   function apply() {
     drawTabs();
-    rows = items.filter(ok);
+    var flat = items.filter(ok);
+    total = flat.length;
+    rows = groupRows(flat);
     shown = 0; lastDay = '';
     $('list').textContent = '';
     $('more').hidden = true;
     var m = $('meta');
     m.textContent = (cat === 'student' ? 'Notices from TU and ICAN for students: exams, results, forms, scholarships · ' : '') +
-      rows.length + ' item' + (rows.length === 1 ? '' : 's') + (updated ? ' · checked ' + ago(updated) : '');
+      total + ' item' + (total === 1 ? '' : 's') + (updated ? ' · checked ' + ago(updated) : '');
     if (!rows.length) {
       var e = el('div', 'empty');
       var ranged = rFrom || rTo;

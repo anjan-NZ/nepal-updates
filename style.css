@@ -200,6 +200,13 @@ input[type=search]:focus { border-color: var(--accent); background: var(--card-2
 .foot-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
 .t { font-size: 12px; color: var(--dim); padding: 1px 8px; border-radius: 999px; background: var(--chip); cursor: pointer; border: 0; font-family: inherit; }
 .t:hover { color: var(--white); }
+.grp { margin-top: 10px; font-size: 12px; }
+.grpbtn { font: inherit; color: var(--dim); background: var(--chip); border: 0; border-radius: 999px; padding: 1px 9px; cursor: pointer; }
+.grpbtn:hover, .grpbtn:focus-visible { color: var(--white); }
+.grplist { list-style: none; margin-top: 6px; padding-left: 10px; border-left: 2px solid var(--line); }
+.grplist li { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 2px 0; color: var(--dim); }
+.grplist a { color: var(--accent); text-decoration: none; }
+.grplist a:hover { text-decoration: underline; }
 .btns { margin-left: auto; display: flex; gap: 8px; }
 .btn {
   font-size: 13px; font-weight: 600; text-decoration: none; padding: 5px 12px; border-radius: 9px;
